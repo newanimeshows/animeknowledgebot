@@ -11,10 +11,9 @@ import re
 import aiosqlite
 import logging
 import os
+from flask import Flask, request
 
-# Port configuration
-PORT = int(os.getenv('PORT', 5555))  # Default to port 8080 if not set
-
+app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -783,4 +782,4 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    app.run(port=8080)
