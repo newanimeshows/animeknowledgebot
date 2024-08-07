@@ -11,7 +11,7 @@ import re
 import aiosqlite
 import logging
 import os
-
+from flask import Flask
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -780,4 +780,4 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    app.run(host="0.0.0.0", port=8080)
