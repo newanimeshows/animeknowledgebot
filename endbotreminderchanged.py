@@ -784,11 +784,7 @@ def main():
     # Start polling
     application.run_polling()
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    update = Update.de_json(request.get_json(), bot)
-    dispatcher.process_update(update)
-    return 'OK'
+
 
 if __name__ == '__main__':
     asyncio.run(main())
