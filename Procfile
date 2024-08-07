@@ -1,1 +1,1 @@
-web: gunicorn -b 0.0.0.0:8080 app:app
+worker: python3 main.py
