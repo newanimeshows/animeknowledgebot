@@ -11,9 +11,7 @@ import re
 import aiosqlite
 import logging
 import os
-from flask import Flask, request
 
-app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -782,5 +780,4 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=8080)
+    mian()
