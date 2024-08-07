@@ -26,6 +26,9 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(leve
 # Your Telegram bot token
 TOKEN = '7220751053:AAHIHV4NtLknZHNzvrnrS21teEKHJaBfK1c'  # Replace with your actual token
 
+# Default port is 8080 if not specified
+PORT = int(os.getenv('PORT', 8080))  
+
 # List of websites to search
 WEBSITES = [
     'https://graphql.anilist.co',
@@ -788,6 +791,4 @@ def webhook():
     return 'OK'
 
 if __name__ == '__main__':
-    PORT = 5000  # Specify your port here
-    app.run(host='0.0.0.0', port=PORT)
-
+    asyncio.run(main())
