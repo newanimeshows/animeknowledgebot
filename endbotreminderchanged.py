@@ -776,8 +776,6 @@ def main():
     bot_thread = Thread(target=run_bot)
     bot_thread.start()
 
-    # Start the Flask app
-    flask_app.run(host='0.0.0.0', port=8080)
 
 if __name__ == '__main__':
     main()
