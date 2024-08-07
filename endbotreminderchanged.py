@@ -755,7 +755,7 @@ def scheduler_job():
     # Run the asynchronous check_reminders function using asyncio.run
     asyncio.run(check_reminders())
 
-def main():
+async def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
 
