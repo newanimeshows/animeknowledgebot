@@ -1,4 +1,3 @@
-from flask import Flask, request
 import requests
 import sqlite3
 from bs4 import BeautifulSoup
@@ -11,8 +10,7 @@ import asyncio
 import re
 import aiosqlite
 import logging
-import os
-from fastapi import FastAPI
+
 
 
 logging.basicConfig(level=logging.INFO)
@@ -24,10 +22,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(leve
 
 
 # Your Telegram bot token
-TOKEN = '7220751053:AAHIHV4NtLknZHNzvrnrS21teEKHJaBfK1c'  # Replace with your actual token
-
-# Default port is 8080 if not specified
-PORT = int(os.getenv('PORT', 8080))  
+TOKEN = '7352954965:AAEebmVPec3kGMQ42fNdue2AylShZywvMq8'  # Replace with your actual token
 
 # List of websites to search
 WEBSITES = [
@@ -755,7 +750,7 @@ def scheduler_job():
     # Run the asynchronous check_reminders function using asyncio.run
     asyncio.run(check_reminders())
 
-async def main():
+def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
 
@@ -782,9 +777,7 @@ async def main():
     scheduler.start()
 
     # Start polling
-    await application.run_polling()
-
-
+    application.run_polling()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
