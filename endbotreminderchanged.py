@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(leve
 
 
 # Your Telegram bot token
-TOKEN = '7352954965:AAEebmVPec3kGMQ42fNdue2AylShZywvMq8'  # Replace with your actual token
+TOKEN = '7220751053:AAHIHV4NtLknZHNzvrnrS21teEKHJaBfK1c'  # Replace with your actual token
 
 # List of websites to search
 WEBSITES = [
