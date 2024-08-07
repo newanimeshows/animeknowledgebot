@@ -1,3 +1,4 @@
+from flask import Flask, request
 import requests
 import sqlite3
 from bs4 import BeautifulSoup
@@ -11,7 +12,6 @@ import re
 import aiosqlite
 import logging
 import os
-from flask import Flask
 from fastapi import FastAPI
 
 
@@ -781,7 +781,13 @@ def main():
     # Start polling
     application.run_polling()
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(), bot)
+    dispatcher.process_update(update)
+    return 'OK'
+
 if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    PORT = 5000  # Specify your port here
+    app.run(host='0.0.0.0', port=PORT)
 
