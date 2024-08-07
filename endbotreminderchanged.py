@@ -10,6 +10,7 @@ import asyncio
 import re
 import aiosqlite
 import logging
+import os
 
 # Port configuration
 PORT = int(os.getenv('PORT', 8080))  # Default to port 8080 if not set
