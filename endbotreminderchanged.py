@@ -9,6 +9,24 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import asyncio
 import re
+from flask import Flask
+from threading import Thread
+
+
+# Initialize Flask app
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return 'Hello, this is the Flask app!'
+
+@flask_app.route('/health')
+def health_check():
+    return 'Healthy', 200
+
+
+
+
 
 # Your Telegram bot token
 TOKEN = os.getenv('BOT_TOKEN')  # Replace with your actual token
@@ -751,6 +769,15 @@ def main():
 
     # Start polling
     application.run_polling()
+
+    def run_bot():
+        application.run_polling()
+
+    bot_thread = Thread(target=run_bot)
+    bot_thread.start()
+
+    # Start the Flask app
+    flask_app.run(host='0.0.0.0', port=8080)
 
 if __name__ == '__main__':
     main()
