@@ -8,18 +8,6 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import asyncio
 import re
-import aiosqlite
-import logging
-
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-
-#script start main
-
 
 # Your Telegram bot token
 TOKEN = '7352954965:AAEebmVPec3kGMQ42fNdue2AylShZywvMq8'  # Replace with your actual token
@@ -32,36 +20,27 @@ WEBSITES = [
 
 # Initialize SQLite database
 def init_db():
-    try:
-        conn = sqlite3.connect('favorites.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS reminders (
-                user_id INTEGER,
-                anime_name TEXT,
-                remind_time TEXT,
-                PRIMARY KEY (user_id, anime_name, remind_time)
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
-                last_interaction TEXT
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS favorites (
-                user_id INTEGER,
-                anime_name TEXT,
-                PRIMARY KEY (user_id, anime_name)
-            )
-        ''')
-        conn.commit()
-    except sqlite3.Error as e:
-        logger.error(f"SQLite error: {e}")
-    finally:
-        conn.close()
+    conn = sqlite3.connect('favorites.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reminders (
+            user_id INTEGER,
+            anime_name TEXT,
+            remind_time TEXT,
+            PRIMARY KEY (user_id, anime_name, remind_time)
+        )
+    ''')
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            last_interaction TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
+# Initialize SQLite database for welcome messages
 def init_welcome_db():
     try:
         conn = sqlite3.connect('welcome.db')
@@ -73,10 +52,10 @@ def init_welcome_db():
             )
         ''')
         conn.commit()
-    except sqlite3.Error as e:
-        logger.error(f"SQLite error: {e}")
-    finally:
         conn.close()
+        print("SQLite database initialized successfully.")
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
         
 # Function to check if user has already been welcomed today
 def has_been_welcomed_today(user_id):
@@ -190,16 +169,15 @@ async def remove_reminder_command(update: Update, context: CallbackContext) -> N
     remove_reminder(user_id, anime_name)
     await update.message.reply_text(f"Removed reminder for '{anime_name}'.")
 
-#check reminders
-
-    
 async def check_reminders():
     now = datetime.now().isoformat()
-    async with aiosqlite.connect('favorites.db') as db:
-        async with db.execute('SELECT user_id, anime_name FROM reminders WHERE remind_time <= ?', (now,)) as cursor:
-            reminders = await cursor.fetchall()
+    conn = sqlite3.connect('favorites.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id, anime_name FROM reminders WHERE remind_time <= ?', (now,))
+    reminders = cursor.fetchall()
+    conn.close()
     
-    bot = Bot(token=TOKEN)
+    bot = Bot(token=TOKEN)  # Initialize the bot object
 
     for user_id, anime_name in reminders:
         try:
@@ -208,36 +186,30 @@ async def check_reminders():
             print(f"Error sending reminder to user {user_id}: {e}")
 
     # Remove reminders that have been sent
-    async with aiosqlite.connect('favorites.db') as db:
-        await db.execute('DELETE FROM reminders WHERE remind_time <= ?', (now,))
-        await db.commit()
-
+    conn = sqlite3.connect('favorites.db')
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM reminders WHERE remind_time <= ?', (now,))
+    conn.commit()
+    conn.close()
 
 # Retrieve favorite anime for a user
-
-
 async def get_favorites(user_id: int) -> list:
-    async with aiosqlite.connect('favorites.db') as db:
-        async with db.execute('SELECT anime_name FROM favorites WHERE user_id = ?', (user_id,)) as cursor:
-            rows = await cursor.fetchall()
+    conn = sqlite3.connect('favorites.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT anime_name FROM favorites WHERE user_id = ?', (user_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    # Filter out None values and return non-None anime names
     return [row[0] for row in rows if row[0] is not None]
 
-
-
-#fetch the naime details
 
 def fetch_anime_data(query):
     url = 'https://graphql.anilist.co'
     headers = {'Content-Type': 'application/json'}
-    try:
-        response = requests.post(url, json={'query': query}, headers=headers)
-        response.raise_for_status()
+    response = requests.post(url, json={'query': query}, headers=headers)
+    if response.status_code == 200:
         return response.json()
-    except requests.RequestException as e:
-        logger.error(f"Error fetching anime data: {e}")
-        return None
-
-
+    return None
 
 def get_weekly_top_anime():
     query = '''
