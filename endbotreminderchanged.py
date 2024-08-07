@@ -782,7 +782,7 @@ async def main():
     scheduler.start()
 
     # Start polling
-    application.run_polling()
+    await application.run_polling()
 
 
 
