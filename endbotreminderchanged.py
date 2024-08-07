@@ -11,6 +11,8 @@ import re
 import aiosqlite
 import logging
 
+# Port configuration
+PORT = int(os.getenv('PORT', 8080))  # Default to port 8080 if not set
 
 
 logging.basicConfig(level=logging.INFO)
