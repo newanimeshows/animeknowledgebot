@@ -10,7 +10,7 @@ import asyncio
 import re
 
 # Your Telegram bot token
-TOKEN = '7352954965:AAEebmVPec3kGMQ42fNdue2AylShZywvMq8'  # Replace with your actual token
+TOKEN = os.getenv('BOT_TOKEN')  # Replace with your actual token
 
 # List of websites to search
 WEBSITES = [
