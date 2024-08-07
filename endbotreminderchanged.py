@@ -12,6 +12,8 @@ import aiosqlite
 import logging
 import os
 from flask import Flask
+from fastapi import FastAPI
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -780,4 +782,6 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8080)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
+
