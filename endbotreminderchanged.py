@@ -770,7 +770,8 @@ def main():
     # Start polling
     application.run_polling()
 
-    def start_bot():
+def start_bot():
+    # Start the bot in a separate thread
     bot_thread = Thread(target=run_bot)
     bot_thread.start()
 
