@@ -784,12 +784,8 @@ if __name__ == '__main__':
 
     # Run the Telegram bot
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If the event loop is running, create a task
-            asyncio.ensure_future(main())
-            loop.run_forever()  # Run the event loop indefinitely
-        else:
-            loop.run_until_complete(main())
+        asyncio.run(main())  # This should be used if there is no other event loop running
     except RuntimeError as e:
         print(f"RuntimeError: {e}")
+        import traceback
+        traceback.print_exc()
