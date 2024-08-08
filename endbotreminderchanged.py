@@ -761,6 +761,7 @@ async def main():
     scheduler.start()
 
     # Start the Bot
+    await application.initialize()  # Ensure the bot is properly initialized
     await application.start()
     await application.idle()
 
