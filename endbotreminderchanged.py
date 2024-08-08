@@ -9,20 +9,24 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 import asyncio
 import re
-from flask import Flask
-from threading import Thread
-import threading
-from http.server import HTTPServer, SimpleHTTPRequestHandler, BaseHTTPRequestHandler
+import aiosqlite
+import logging
+import http.server
+import socketserver
 
 
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-
+#script start main
 
 
 # Your Telegram bot token
-TOKEN = os.getenv('BOT_TOKEN')  # Replace with your actual token
+TOKEN = os.getenv('BOT_TOKEN')  # Add token in platform
+
 
 # List of websites to search
 WEBSITES = [
@@ -32,27 +36,36 @@ WEBSITES = [
 
 # Initialize SQLite database
 def init_db():
-    conn = sqlite3.connect('favorites.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS reminders (
-            user_id INTEGER,
-            anime_name TEXT,
-            remind_time TEXT,
-            PRIMARY KEY (user_id, anime_name, remind_time)
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            last_interaction TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect('favorites.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS reminders (
+                user_id INTEGER,
+                anime_name TEXT,
+                remind_time TEXT,
+                PRIMARY KEY (user_id, anime_name, remind_time)
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY,
+                last_interaction TEXT
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS favorites (
+                user_id INTEGER,
+                anime_name TEXT,
+                PRIMARY KEY (user_id, anime_name)
+            )
+        ''')
+        conn.commit()
+    except sqlite3.Error as e:
+        logger.error(f"SQLite error: {e}")
+    finally:
+        conn.close()
 
-# Initialize SQLite database for welcome messages
 def init_welcome_db():
     try:
         conn = sqlite3.connect('welcome.db')
@@ -64,10 +77,10 @@ def init_welcome_db():
             )
         ''')
         conn.commit()
-        conn.close()
-        print("SQLite database initialized successfully.")
     except sqlite3.Error as e:
-        print(f"SQLite error: {e}")
+        logger.error(f"SQLite error: {e}")
+    finally:
+        conn.close()
         
 # Function to check if user has already been welcomed today
 def has_been_welcomed_today(user_id):
@@ -181,15 +194,16 @@ async def remove_reminder_command(update: Update, context: CallbackContext) -> N
     remove_reminder(user_id, anime_name)
     await update.message.reply_text(f"Removed reminder for '{anime_name}'.")
 
+#check reminders
+
+    
 async def check_reminders():
     now = datetime.now().isoformat()
-    conn = sqlite3.connect('favorites.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT user_id, anime_name FROM reminders WHERE remind_time <= ?', (now,))
-    reminders = cursor.fetchall()
-    conn.close()
+    async with aiosqlite.connect('favorites.db') as db:
+        async with db.execute('SELECT user_id, anime_name FROM reminders WHERE remind_time <= ?', (now,)) as cursor:
+            reminders = await cursor.fetchall()
     
-    bot = Bot(token=TOKEN)  # Initialize the bot object
+    bot = Bot(token=TOKEN)
 
     for user_id, anime_name in reminders:
         try:
@@ -198,30 +212,36 @@ async def check_reminders():
             print(f"Error sending reminder to user {user_id}: {e}")
 
     # Remove reminders that have been sent
-    conn = sqlite3.connect('favorites.db')
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM reminders WHERE remind_time <= ?', (now,))
-    conn.commit()
-    conn.close()
+    async with aiosqlite.connect('favorites.db') as db:
+        await db.execute('DELETE FROM reminders WHERE remind_time <= ?', (now,))
+        await db.commit()
+
 
 # Retrieve favorite anime for a user
+
+
 async def get_favorites(user_id: int) -> list:
-    conn = sqlite3.connect('favorites.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT anime_name FROM favorites WHERE user_id = ?', (user_id,))
-    rows = cursor.fetchall()
-    conn.close()
-    # Filter out None values and return non-None anime names
+    async with aiosqlite.connect('favorites.db') as db:
+        async with db.execute('SELECT anime_name FROM favorites WHERE user_id = ?', (user_id,)) as cursor:
+            rows = await cursor.fetchall()
     return [row[0] for row in rows if row[0] is not None]
 
+
+
+#fetch the naime details
 
 def fetch_anime_data(query):
     url = 'https://graphql.anilist.co'
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, json={'query': query}, headers=headers)
-    if response.status_code == 200:
+    try:
+        response = requests.post(url, json={'query': query}, headers=headers)
+        response.raise_for_status()
         return response.json()
-    return None
+    except requests.RequestException as e:
+        logger.error(f"Error fetching anime data: {e}")
+        return None
+
+
 
 def get_weekly_top_anime():
     query = '''
@@ -683,7 +703,8 @@ def set_bot_commands(token):
         {'command': 'removefavanime', 'description': 'Remove specific anime from favorites'},
         {'command': 'remind', 'description': 'Set a reminder for an anime'},
         {'command': 'showreminders', 'description': 'Show all active reminders'},
-        {'command': 'removereminder', 'description': 'Cancel a reminder for a specific anime'}
+        {'command': 'removereminder', 'description': 'Cancel a reminder for a specific anime'},
+        {'command': 'owner', 'description': 'Gives Owner info!'}
     ]
     response = requests.post(url, json={'commands': commands})
     print(response.json())  # For debugging
@@ -734,7 +755,7 @@ def scheduler_job():
     # Run the asynchronous check_reminders function using asyncio.run
     asyncio.run(check_reminders())
 
-async def main():
+def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
 
@@ -756,44 +777,21 @@ async def main():
      # Initialize the database and scheduler
     init_db()
     init_welcome_db()
+    
+    # Start the bot
+    asyncio.run(application.run_polling())
+
+    # Initialize the scheduler
     scheduler = BackgroundScheduler()
-    scheduler.add_job(scheduler_job, IntervalTrigger(minutes=1))
     scheduler.start()
+    scheduler.add_job(check_reminders, IntervalTrigger(seconds=60))
 
-    # Start the Bot
-    await application.initialize()  # Ensure the bot is properly initialized
-    await application.start()
-    await application.run_polling()
+    # Start a simple HTTP server
+    PORT = int(os.environ.get("PORT", 8080))
+    Handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        print("serving at port", PORT)
+        httpd.serve_forever()
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(b'Bot is running')
-
-def run_http_server():
-    port = int(os.getenv('PORT', 8000))
-    server_address = ('', port)
-    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
-    httpd.serve_forever()
-
-if __name__ == '__main__':
-    # Start the HTTP server in a separate thread
-    threading.Thread(target=run_http_server, daemon=True).start()
-
-    # Use the current event loop
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            print("Event loop is already running.")
-        else:
-            loop.run_until_complete(main())
-    except RuntimeError as e:
-        print(f"RuntimeError: {e}")
-        import traceback
-        traceback.print_exc()
-    except Exception as e:
-        print(f"Exception: {e}")
-        import traceback
-        traceback.print_exc()
+if __name__ == "__main__":
+    main()
