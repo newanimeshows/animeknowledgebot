@@ -1,5 +1,5 @@
 beautifulsoup4==4.12.2
-python-telegram-bot==20.3
+python-telegram-bot==20.1.0
 apscheduler==3.10.1
 aiosqlite==0.20.0
 requests==2.31.0
