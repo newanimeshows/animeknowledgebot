@@ -13,16 +13,6 @@ from flask import Flask
 from threading import Thread
 
 
-# Initialize Flask app
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-def home():
-    return 'Hello, this is the Flask app!'
-
-@flask_app.route('/health')
-def health_check():
-    return 'Healthy', 200
 
 
 
@@ -767,8 +757,8 @@ def main():
     scheduler.add_job(scheduler_job, IntervalTrigger(minutes=1))
     scheduler.start()
 
-    # Start polling
-    application.run_polling()
+    # Start the Bot
+    await application.start_polling()
 
 def start_bot():
     # Start the bot in a separate thread
@@ -776,5 +766,6 @@ def start_bot():
     bot_thread.start()
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    init_db()
+    asyncio.run(main())
