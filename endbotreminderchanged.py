@@ -771,6 +771,8 @@ def run_http_server():
 
 
 
+
+
 async def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
@@ -799,19 +801,18 @@ async def main():
     scheduler.start()
     scheduler.add_job(check_reminders, IntervalTrigger(seconds=60))
 
-    # Start a simple HTTP server
-    PORT = int(os.environ.get("PORT", 8080))
-    Handler = http.server.SimpleHTTPRequestHandler
-    httpd = socketserver.TCPServer(("", PORT), Handler)
-
-    def run_http_server():
-        print("serving at port", PORT)
-        httpd.serve_forever()
-
-    threading.Thread(target=run_http_server).start()
-
     # Start the Telegram bot
     await application.run_polling()
 
+async def run_http_server():
+    PORT = int(os.environ.get("PORT", 8080))
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = socketserver.TCPServer(("", PORT), Handler)
+    print("serving at port", PORT)
+    httpd.serve_forever()
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.create_task(run_http_server())
+    loop.run_forever()
