@@ -761,7 +761,7 @@ async def main():
     scheduler.start()
 
     # Start the Bot
-    await application.start_polling()
+    await application.start()
     await application.idle()
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
