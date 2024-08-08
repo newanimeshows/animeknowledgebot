@@ -783,8 +783,11 @@ if __name__ == '__main__':
     threading.Thread(target=run_http_server).start()
 
     # Run the Telegram bot
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
-        asyncio.ensure_future(main())
-    else:
-        loop.run_until_complete(main())
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(main())
+        else:
+            loop.run_until_complete(main())
+    except RuntimeError as e:
+        print(f"RuntimeError: {e}")
