@@ -780,13 +780,15 @@ def run_http_server():
 
 if __name__ == '__main__':
     # Start the HTTP server in a separate thread
-    threading.Thread(target=run_http_server).start()
+    threading.Thread(target=run_http_server, daemon=True).start()
 
     # Run the Telegram bot
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
+            # If the event loop is running, create a task
             asyncio.ensure_future(main())
+            loop.run_forever()  # Run the event loop indefinitely
         else:
             loop.run_until_complete(main())
     except RuntimeError as e:
