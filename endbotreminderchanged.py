@@ -778,11 +778,13 @@ def run_http_server():
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
     httpd.serve_forever()
 
-if __name__ == "__main__":
-    init_db()  # Initialize the database
-
+if __name__ == '__main__':
     # Start the HTTP server in a separate thread
     threading.Thread(target=run_http_server).start()
 
-    # Start the bot
-    asyncio.run(main())
+    # Run the Telegram bot
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        asyncio.ensure_future(main())
+    else:
+        loop.run_until_complete(main())
