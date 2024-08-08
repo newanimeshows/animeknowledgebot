@@ -763,7 +763,7 @@ async def main():
     # Start the Bot
     await application.initialize()  # Ensure the bot is properly initialized
     await application.start()
-    await application.idle()
+    await application.run_polling()
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
