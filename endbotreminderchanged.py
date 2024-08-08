@@ -14,6 +14,8 @@ import logging
 import http.server
 import socketserver
 import threading
+import concurrent.futures
+
 
 
 logging.basicConfig(level=logging.INFO)
@@ -775,38 +777,9 @@ def run_http_server():
 
 
 
-async def main():
-    # Initialize the application with the token
-    application = Application.builder().token(TOKEN).build()
 
-    # Add handlers
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('weekly', weekly))
-    application.add_handler(CommandHandler('trending', trending))
-    application.add_handler(CommandHandler('top', top))
-    application.add_handler(CommandHandler('search', search))
-    application.add_handler(CommandHandler('showfav', show_favorites))
-    application.add_handler(CommandHandler('removefavanime', remove_favorite_anime))
-    application.add_handler(CommandHandler('remind', remind_me))
-    application.add_handler(CommandHandler('showreminders', show_reminders_command))
-    application.add_handler(CommandHandler('removereminder', remove_reminder_command))
-    application.add_handler(CommandHandler('help', help_command))  # Register /help command handler
-    application.add_handler(CommandHandler('owner', owner_command))  # Register /owner command handler
-    application.add_handler(CallbackQueryHandler(button, pattern='^start|weekly|trending|top|search|detail_|addfav_|removefav_|showfav'))
 
-    # Initialize the database and scheduler
-    init_db()
-    init_welcome_db()
-    
-    # Initialize the scheduler
-    scheduler = BackgroundScheduler()
-    scheduler.start()
-    scheduler.add_job(check_reminders, IntervalTrigger(seconds=60))
-
-    # Start the Telegram bot
-    await application.run_polling()
-
-async def run_http_server():
+def run_http_server():
     PORT = int(os.environ.get("PORT", 8080))
     Handler = http.server.SimpleHTTPRequestHandler
     httpd = socketserver.TCPServer(("", PORT), Handler)
@@ -814,7 +787,41 @@ async def run_http_server():
     httpd.serve_forever()
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.create_task(run_http_server())
-    loop.run_forever()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(run_http_server)
+        # Make sure to run the bot in the main thread
+        import asyncio
+        from python_telegram_bot_module import Application
+        from python_telegram_bot_module.ext import CommandHandler, CallbackQueryHandler
+        from python_telegram_bot_module.ext.commands import CommandHandler
+
+        async def main():
+            # Initialize the application with the token
+            application = Application.builder().token(TOKEN).build()
+
+            # Add handlers
+            application.add_handler(CommandHandler('start', start))
+            application.add_handler(CommandHandler('weekly', weekly))
+            application.add_handler(CommandHandler('trending', trending))
+            application.add_handler(CommandHandler('top', top))
+            application.add_handler(CommandHandler('search', search))
+            application.add_handler(CommandHandler('showfav', show_favorites))
+            application.add_handler(CommandHandler('removefavanime', remove_favorite_anime))
+            application.add_handler(CommandHandler('remind', remind_me))
+            application.add_handler(CommandHandler('showreminders', show_reminders_command))
+            application.add_handler(CommandHandler('removereminder', remove_reminder_command))
+            application.add_handler(CallbackQueryHandler(button, pattern='^start|weekly|trending|top|search|detail_|addfav_|removefav_|showfav'))
+
+            # Initialize the database and scheduler
+            init_db()
+            init_welcome_db()
+            
+            # Initialize the scheduler
+            scheduler = BackgroundScheduler()
+            scheduler.start()
+            scheduler.add_job(check_reminders, IntervalTrigger(seconds=60))
+
+            # Start the Telegram bot
+            await application.run_polling()
+
+        asyncio.run(main())
