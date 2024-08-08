@@ -782,10 +782,18 @@ if __name__ == '__main__':
     # Start the HTTP server in a separate thread
     threading.Thread(target=run_http_server, daemon=True).start()
 
-    # Run the Telegram bot
+    # Use the current event loop
     try:
-        asyncio.run(main())  # This should be used if there is no other event loop running
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            print("Event loop is already running.")
+        else:
+            loop.run_until_complete(main())
     except RuntimeError as e:
         print(f"RuntimeError: {e}")
+        import traceback
+        traceback.print_exc()
+    except Exception as e:
+        print(f"Exception: {e}")
         import traceback
         traceback.print_exc()
