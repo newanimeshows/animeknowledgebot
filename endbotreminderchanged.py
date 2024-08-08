@@ -759,7 +759,8 @@ def main():
 
     # Start the Bot
     await application.start_polling()
-
+    await application.idle()
+    
 def start_bot():
     # Start the bot in a separate thread
     bot_thread = Thread(target=run_bot)
