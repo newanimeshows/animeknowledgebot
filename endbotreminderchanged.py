@@ -755,6 +755,21 @@ def scheduler_job():
     # Run the asynchronous check_reminders function using asyncio.run
     asyncio.run(check_reminders())
 
+# Create an HTTP server to bind to a port
+class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(b"Server is running")
+
+def run_http_server():
+    PORT = int(os.getenv('PORT', 8000))
+    with socketserver.TCPServer(("", PORT), SimpleHTTPRequestHandler) as httpd:
+        logger.info(f"Serving at port {PORT}")
+        httpd.serve_forever()
+
+
 def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
@@ -793,5 +808,13 @@ def main():
         print("serving at port", PORT)
         httpd.serve_forever()
 
-if __name__ == "__main__":
-    main()
+ # Start HTTP server in a separate task
+    loop = asyncio.get_event_loop()
+    http_server_task = loop.run_in_executor(None, run_http_server)
+
+    # Start the Telegram bot
+    await application.start()
+    await application.idle()
+
+if __name__ == '__main__':
+    asyncio.run(main())
