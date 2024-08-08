@@ -731,7 +731,7 @@ def scheduler_job():
     # Run the asynchronous check_reminders function using asyncio.run
     asyncio.run(check_reminders())
 
-def main():
+async def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
 
@@ -760,13 +760,25 @@ def main():
     # Start the Bot
     await application.start_polling()
     await application.idle()
-    
-def start_bot():
-    # Start the bot in a separate thread
-    bot_thread = Thread(target=run_bot)
-    bot_thread.start()
 
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b'Bot is running')
+
+def run_http_server():
+    port = int(os.getenv('PORT', 8000))
+    server_address = ('', port)
+    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
+    httpd.serve_forever()
 
 if __name__ == "__main__":
-    init_db()
+    init_db()  # Initialize the database
+
+    # Start the HTTP server in a separate thread
+    threading.Thread(target=run_http_server).start()
+
+    # Start the bot
     asyncio.run(main())
