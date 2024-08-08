@@ -794,9 +794,6 @@ async def main():
     init_db()
     init_welcome_db()
     
-    # Start the bot
-    # asyncio.run(application.run_polling())
-
     # Initialize the scheduler
     scheduler = BackgroundScheduler()
     scheduler.start()
@@ -814,8 +811,7 @@ async def main():
     threading.Thread(target=run_http_server).start()
 
     # Start the Telegram bot
-    await application.start()
-    await application.idle()
+    await application.run_polling()
 
 if __name__ == '__main__':
     asyncio.run(main())
