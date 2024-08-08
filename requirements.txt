@@ -9,3 +9,4 @@ flask
 fastapi
 uvicorn
 gunicorn
+aiogram==3.1.0
