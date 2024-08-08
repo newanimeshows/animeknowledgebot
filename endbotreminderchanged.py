@@ -13,7 +13,7 @@ import aiosqlite
 import logging
 import http.server
 import socketserver
-
+import threading
 
 
 logging.basicConfig(level=logging.INFO)
@@ -769,6 +769,8 @@ def run_http_server():
         logger.info(f"Serving at port {PORT}")
         httpd.serve_forever()
 
+
+
 async def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
@@ -804,9 +806,12 @@ async def main():
     PORT = int(os.environ.get("PORT", 8080))
     Handler = http.server.SimpleHTTPRequestHandler
     httpd = socketserver.TCPServer(("", PORT), Handler)
-    httpd.daemon = True  # Set as a daemon so it exits when main thread exits
-    httpd.start()
-    print("serving at port", PORT)
+
+    def run_http_server():
+        print("serving at port", PORT)
+        httpd.serve_forever()
+
+    threading.Thread(target=run_http_server).start()
 
     # Start the Telegram bot
     await application.start()
