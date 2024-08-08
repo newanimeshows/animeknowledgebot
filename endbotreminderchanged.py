@@ -769,8 +769,7 @@ def run_http_server():
         logger.info(f"Serving at port {PORT}")
         httpd.serve_forever()
 
-
-def main():
+async def main():
     # Initialize the application with the token
     application = Application.builder().token(TOKEN).build()
 
@@ -789,12 +788,12 @@ def main():
     application.add_handler(CommandHandler('owner', owner_command))  # Register /owner command handler
     application.add_handler(CallbackQueryHandler(button, pattern='^start|weekly|trending|top|search|detail_|addfav_|removefav_|showfav'))
 
-     # Initialize the database and scheduler
+    # Initialize the database and scheduler
     init_db()
     init_welcome_db()
     
     # Start the bot
-    asyncio.run(application.run_polling())
+    # asyncio.run(application.run_polling())
 
     # Initialize the scheduler
     scheduler = BackgroundScheduler()
@@ -804,13 +803,10 @@ def main():
     # Start a simple HTTP server
     PORT = int(os.environ.get("PORT", 8080))
     Handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print("serving at port", PORT)
-        httpd.serve_forever()
-
- # Start HTTP server in a separate task
-    loop = asyncio.get_event_loop()
-    http_server_task = loop.run_in_executor(None, run_http_server)
+    httpd = socketserver.TCPServer(("", PORT), Handler)
+    httpd.daemon = True  # Set as a daemon so it exits when main thread exits
+    httpd.start()
+    print("serving at port", PORT)
 
     # Start the Telegram bot
     await application.start()
